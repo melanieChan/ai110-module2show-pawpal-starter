@@ -5,12 +5,18 @@
 **a. Initial design**
 
 - Briefly describe your initial UML design.
+  - The UML design includes three primary classes: `Pet`, `Task`, and `Plan`. `Pet` class represents a pet with care instructions and relevant information about the pet's needs. The `Task` class represents a care task for the pet, including the time required to complete the task and its status. The `Plan` class is a list of tasks the owner needs to complete.
 - What classes did you include, and what responsibilities did you assign to each?
+  - Pet: represents a pet; should include instructions on how to take care of this pet and any relevant info about the pet's needs
+  - Task: represents a task that owner has to do for their pet, should include time needed and task status
+  - Plan: a list of tasks the owner has to complete
 
 **b. Design changes**
 
 - Did your design change during implementation?
+  - Yes
 - If yes, describe at least one change and why you made it.
+  - AI had added a few redundant fields like adding time constraints to the Owner class when it was already covered in PlanningConstraints. I decided to remove it to have a cleaner design. 
 
 ---
 

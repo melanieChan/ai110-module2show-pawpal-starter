@@ -1,15 +1,76 @@
 classDiagram
-    %% Replace the placeholders below with your actual classes, attributes, methods, and relationships.
-    %% Keep this file updated so it matches your final implementation.
-
-    class ClassName {
-        +type attribute
-        +method() returnType
+    class Owner {
+        +string name
+        +List~Pet~ pets
     }
 
-    class AnotherClass {
-        +type attribute
-        +method() returnType
+    class Pet {
+        +string name
+        +string species
+        +string notes
+        +Owner owner
+        +List~CareTask~ tasks
     }
 
-    ClassName --> AnotherClass : relationship
+    class TaskCategory {
+        <<enumeration>>
+        WALK
+        FEEDING
+        MEDS
+        ENRICHMENT
+        GROOMING
+        OTHER
+    }
+
+    class Priority {
+        <<enumeration>>
+        LOW
+        MEDIUM
+        HIGH
+    }
+
+    class CareTask {
+        +string title
+        +TaskCategory category
+        +int duration_minutes
+        +Priority priority
+        +time fixed_time
+        +string recurrence
+    }
+
+    class PlanningConstraints {
+        +time day_start
+        +time day_end
+        +List~tuple~ blocked_windows
+    }
+
+    class Scheduler {
+        +build_plan(pet, constraints) DailyPlan
+        -_sort_tasks(tasks) List~CareTask~
+        -_fits(task, remaining_minutes) bool
+    }
+
+    class ScheduledTask {
+        +CareTask task
+        +time start_time
+        +time end_time
+        +string reason
+    }
+
+    class DailyPlan {
+        +date date
+        +Pet pet
+        +List~ScheduledTask~ scheduled
+        +List~tuple~ skipped
+        +summary() string
+        +explain() string
+    }
+
+    Owner "1" --> "*" Pet
+    Pet "1" --> "*" CareTask
+    CareTask --> TaskCategory
+    CareTask --> Priority
+    Scheduler ..> PlanningConstraints : uses
+    Scheduler ..> DailyPlan : creates
+    DailyPlan "1" --> "*" ScheduledTask
+    ScheduledTask --> CareTask
