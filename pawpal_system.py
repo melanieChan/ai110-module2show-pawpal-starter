@@ -34,8 +34,19 @@ class CareTask:
     completed: bool = False
 
     def mark_complete(self) -> None:
-        """Mark this task as completed."""
+        """Mark this task as completed. If it recurs daily/weekly, spawn the next occurrence on the same pet."""
         self.completed = True
+        if self.pet is not None and self.recurrence in ("daily", "weekly"):
+            self.pet.add_task(
+                CareTask(
+                    title=self.title,
+                    category=self.category,
+                    duration_minutes=self.duration_minutes,
+                    priority=self.priority,
+                    fixed_time=self.fixed_time,
+                    recurrence=self.recurrence,
+                )
+            )
 
 
 @dataclass
