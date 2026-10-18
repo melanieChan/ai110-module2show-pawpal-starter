@@ -15,15 +15,28 @@ mochi.tasks = [
     CareTask("Give meds", TaskCategory.MEDS, 10, Priority.HIGH, fixed_time=time(8, 0)),
     CareTask("Evening brush", TaskCategory.GROOMING, 15, Priority.LOW),
     CareTask("Morning walk", TaskCategory.WALK, 30, Priority.HIGH, fixed_time=time(7, 0)),
+    # Same pet, overlaps with "Morning walk" (7:00-7:30).
+    CareTask("Teeth brushing", TaskCategory.GROOMING, 10, Priority.MEDIUM, fixed_time=time(7, 10)),
 ]
 
 whiskers = Pet(name="Whiskers", species="cat")
 whiskers.tasks = [
     CareTask("Grooming", TaskCategory.GROOMING, 20, Priority.LOW),
     CareTask("Feeding", TaskCategory.FEEDING, 10, Priority.HIGH, fixed_time=time(7, 30)),
+    # Different pet, overlaps with Mochi's "Morning walk" (7:00-7:30).
+    CareTask("Vet checkup", TaskCategory.OTHER, 20, Priority.HIGH, fixed_time=time(7, 0)),
 ]
 
 owner = Owner(name="Alice", pets=[mochi, whiskers])
+
+print("Conflict Check")
+print("=" * 40)
+conflicts = Scheduler().detect_conflicts(owner)
+if conflicts:
+    for warning in conflicts:
+        print(warning)
+else:
+    print("No conflicts detected.")
 
 # Mark a couple of tasks complete so filtering has something to show.
 mochi.tasks[0].mark_complete()
@@ -33,6 +46,7 @@ constraints = PlanningConstraints(day_start=time(7, 0), day_end=time(9, 0))
 
 plan = Scheduler().build_plan(owner, constraints)
 
+print()
 print("Today's Schedule")
 print("=" * 40)
 print(plan.explain())

@@ -275,6 +275,30 @@ class Scheduler:
         plan.scheduled.sort(key=lambda st: _time_to_minutes(st.start_time))
         return plan
 
+    def detect_conflicts(self, owner: Owner) -> list[str]:
+        """Lightweight check for fixed-time tasks that overlap, for the same pet or across pets.
+
+        Does not raise or modify anything; just returns a warning message per conflicting pair.
+        """
+        warnings: list[str] = []
+        fixed_tasks = sorted(
+            (t for t in owner.get_all_tasks() if t.fixed_time is not None),
+            key=lambda t: _time_to_minutes(t.fixed_time),
+        )
+        for i, task_a in enumerate(fixed_tasks):
+            end_a = _time_to_minutes(task_a.fixed_time) + task_a.duration_minutes
+            for task_b in fixed_tasks[i + 1 :]:
+                start_b = _time_to_minutes(task_b.fixed_time)
+                if start_b >= end_a:
+                    break
+                pet_a = task_a.pet.name if task_a.pet else "?"
+                pet_b = task_b.pet.name if task_b.pet else "?"
+                warnings.append(
+                    f"Warning: '{task_a.title}' [{pet_a}] at {task_a.fixed_time.strftime('%H:%M')} "
+                    f"conflicts with '{task_b.title}' [{pet_b}] at {task_b.fixed_time.strftime('%H:%M')}."
+                )
+        return warnings
+
     def _sort_tasks(self, tasks: list[CareTask]) -> list[CareTask]:
         """Sort tasks by priority (high first), then by shortest duration."""
         return sorted(tasks, key=lambda t: (_PRIORITY_ORDER[t.priority], t.duration_minutes))
