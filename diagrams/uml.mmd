@@ -10,6 +10,7 @@ classDiagram
         +string species
         +string notes
         +List~CareTask~ tasks
+        +add_task(task) void
     }
 
     class TaskCategory {
@@ -37,6 +38,8 @@ classDiagram
         +time fixed_time
         +string recurrence
         +Pet pet
+        +bool completed
+        +mark_complete() void
     }
 
     class PlanningConstraints {

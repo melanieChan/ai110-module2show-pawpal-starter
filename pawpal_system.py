@@ -30,6 +30,10 @@ class CareTask:
     fixed_time: Optional[time] = None
     recurrence: Optional[str] = None
     pet: Optional[Pet] = None
+    completed: bool = False
+
+    def mark_complete(self) -> None:
+        self.completed = True
 
 
 @dataclass
@@ -38,6 +42,10 @@ class Pet:
     species: str
     notes: str = ""
     tasks: list[CareTask] = field(default_factory=list)
+
+    def add_task(self, task: CareTask) -> None:
+        task.pet = self
+        self.tasks.append(task)
 
 
 @dataclass
