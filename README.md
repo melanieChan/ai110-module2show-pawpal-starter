@@ -92,14 +92,14 @@ Sample test output:
 
 ## 📐 Smarter Scheduling
 
-> Fill in once you've implemented scheduling logic.
-
 | Feature | Method(s) | Notes |
 |---------|-----------|-------|
-| Task sorting | | e.g., by priority, duration |
-| Filtering | | e.g., skip tasks if time runs out |
-| Conflict handling | | e.g., overlapping time slots |
-| Recurring tasks | | e.g., daily vs. weekly |
+| Task sorting | `Owner.sort_tasks_by_time()` | Sorts a list of `CareTask`s (defaults to `get_all_tasks()`) by `fixed_time` ascending; tasks with no fixed time sort last. Separate from `Scheduler._sort_tasks()`, which orders *unscheduled flexible* tasks by priority then shortest duration while filling gaps. |
+| Filtering | `Owner.filter_tasks(completed=None, pet_name=None)` | Returns tasks across all pets, optionally narrowed by completion status, pet name, or both. Composable with sorting, e.g. `owner.sort_tasks_by_time(owner.filter_tasks(completed=False))`. |
+| Conflict handling | `Scheduler.detect_conflicts(owner)` | Lightweight check that sweeps all fixed-time tasks (sorted by start time) and returns a list of human-readable warning strings for any pair that overlaps — same pet or different pets. Never raises or modifies the schedule; it's purely advisory and independent of `build_plan()`, which separately resolves fixed-time conflicts by skipping the later task. |
+| Recurring tasks | `CareTask.mark_complete()` | When a task's `recurrence` is `"daily"` or `"weekly"` and it's attached to a `Pet`, completing it automatically creates a fresh, incomplete clone (same title/category/duration/priority/fixed_time/recurrence) via `pet.add_task()`, so the next occurrence is ready to be scheduled. The completed task stays in place as a history record. |
+
+See `main.py` for a runnable demo of all four: it adds tasks out of order and with overlapping fixed times, then prints the conflict warnings, the schedule, and the sorted/filtered task views.
 
 ## 📸 Demo Walkthrough
 
