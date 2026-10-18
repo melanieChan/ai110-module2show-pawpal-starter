@@ -79,11 +79,14 @@
 **a. What went well**
 
 - What part of this project are you most satisfied with?
+  - I'm satisfied with discussions with AI on various tradeoffs and design decisions throughout the project.
 
 **b. What you would improve**
 
 - If you had another iteration, what would you improve or redesign?
+  - I would have initially added Owner to DailyPlan from the start instead of adding Pet to DailyPlan. I initially thought DailyPlan should not be for each pet, but I let AI convince me otherwise based on its limited information.
 
 **c. Key takeaway**
 
 - What is one important thing you learned about designing systems or working with AI on this project?
+  - Systems designed by AI can sometimes be overcomplicated or have oversights, so it's important to review the design to ensure that it is make sense, especially there's rarely one correct way to design a system.
