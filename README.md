@@ -22,6 +22,18 @@ Your final app should:
 - Display the plan clearly (and ideally explain the reasoning)
 - Include tests for the most important scheduling behaviors
 
+## ✨ Features
+
+- **Daily plan generation** — `Scheduler.build_plan()` builds a conflict-free daily schedule across all of an owner's pets from task duration, priority, and fixed times.
+- **Fixed-time locking** — tasks with a `fixed_time` (e.g. meds at 8:00) are placed first and win over flexible tasks; anything that collides with a blocked window or another fixed-time task is skipped with a reason.
+- **Priority-based greedy fill** — remaining flexible tasks are sorted by priority (then shortest duration first) and packed into the gaps left after fixed-time tasks are placed.
+- **Conflict warnings** — `Scheduler.detect_conflicts()` scans all fixed-time tasks and reports overlapping pairs (same pet or different pets) as advisory warnings, independent of how `build_plan()` resolves them.
+- **Sorting by time** — `Owner.sort_tasks_by_time()` orders any list of tasks (defaults to all of an owner's tasks) by `fixed_time`, with untimed tasks sorted last.
+- **Filtering** — `Owner.filter_tasks()` narrows tasks by completion status, pet name, or both, and composes with sorting.
+- **Daily/weekly recurrence** — completing a task with `recurrence="daily"` or `"weekly"` automatically clones a fresh, incomplete copy for the next occurrence while keeping the completed one as history.
+- **Blocked time windows** — constraints can mark off ranges (e.g. a work shift) that the scheduler will never place a task into.
+- **Plain-language explanations** — every scheduled task carries a reason it was placed there, and `DailyPlan.summary()` / `explain()` render a one-line or full breakdown of the day.
+
 ## 🧩 Implementation Summary
 
 The logic layer lives in `pawpal_system.py` as plain Python dataclasses, kept separate from the Streamlit UI so the scheduling logic can be tested on its own (see `tests/test_pawpal.py` and `main.py`).
@@ -110,12 +122,78 @@ See `main.py` for a runnable demo of all four: it adds tasks out of order and wi
 
 ## 📸 Demo Walkthrough
 
-Describe your app in numbered steps so a reader can follow along without watching a video:
+### Main UI (`app.py`)
 
-1. <!-- Describe this step -->
-2. <!-- Describe this step -->
-3. <!-- Describe this step -->
-4. <!-- Describe this step -->
-5. <!-- Add more steps as needed -->
+The Streamlit app is organized into a few sections, top to bottom:
 
-**Screenshot or video** *(optional)*: <!-- Insert a screenshot or link to a demo video here -->
+- **Owner & Pet** — enter the owner's name, a pet's name, and species. The app looks up the pet by name or creates a new one.
+- **Tasks** — add a task to the current pet with a title, duration, priority, category, an optional fixed time, and an optional daily/weekly recurrence. The task list below can be filtered to All / Incomplete / Completed, and each row has a **Complete** button that marks the task done (and, for a recurring task, spawns the next occurrence).
+- **Blocked Time Windows** — add/remove ranges the scheduler should never book into (e.g. a work shift or lunch break).
+- **Build Schedule** — pick a day start/end, then click **Generate schedule** to run the scheduler. Any detected conflicts are shown as warnings, followed by the plan summary and the full per-pet breakdown.
+
+### Example workflow
+
+1. Enter owner "Jordan" and add a pet, "Mochi" (dog).
+2. Add a fixed-time task: "Give meds", 10 min, high priority, fixed at 8:00 AM.
+3. Add a flexible task: "Morning walk", 30 min, high priority, no fixed time.
+4. Add a low-priority task: "Brushing", 15 min, no fixed time.
+5. Set the day window to 7:00 AM–9:00 PM and click **Generate schedule**.
+6. Review the output: fixed-time tasks lock into their slot first, then the walk and brushing fill in around them by priority, and the app explains why each task landed where it did.
+
+### Key Scheduler behaviors shown
+
+- **Fixed-time locking** — "Give meds" stays pinned to 8:00 regardless of what else is scheduled.
+- **Conflict warnings** — if two fixed-time tasks overlap (e.g. two tasks both locked near 7:00), the app surfaces a warning for each overlapping pair before building the plan.
+- **Priority-based sorting** — flexible tasks are placed high-priority-first, so "Morning walk" is scheduled before "Brushing" when time is limited.
+- **Skipped tasks with reasons** — a task that can't fit (because it collides with another fixed time or a blocked window) shows up under "Skipped" with a plain-language reason instead of silently disappearing.
+
+### Sample CLI output
+
+`main.py` runs the same logic from the command line with two pets and a deliberately overlapping schedule, so you can see conflict detection, scheduling, and sorting/filtering without the UI:
+
+```
+Conflict Check
+========================================
+Warning: 'Morning walk' [Mochi] at 07:00 conflicts with 'Vet checkup' [Whiskers] at 07:00.
+Warning: 'Morning walk' [Mochi] at 07:00 conflicts with 'Teeth brushing' [Mochi] at 07:10.
+Warning: 'Vet checkup' [Whiskers] at 07:00 conflicts with 'Teeth brushing' [Mochi] at 07:10.
+
+Today's Schedule
+========================================
+Alice's plan for 2026-10-17: 5 task(s) scheduled (85 min), 2 skipped.
+
+Scheduled:
+  07:00-07:30 [Mochi] Morning walk [high] - Fixed-time task (high priority) locked at 07:00.
+  07:30-07:40 [Whiskers] Feeding [high] - Fixed-time task (high priority) locked at 07:30.
+  07:40-07:55 [Mochi] Evening brush [low] - Low priority task placed at 07:40 in available time.
+  08:00-08:10 [Mochi] Give meds [high] - Fixed-time task (high priority) locked at 08:00.
+  08:10-08:30 [Whiskers] Grooming [low] - Low priority task placed at 08:10 in available time.
+Skipped:
+  [Whiskers] Vet checkup [high] - fixed time conflicts with a blocked window or another task
+  [Mochi] Teeth brushing [medium] - fixed time conflicts with a blocked window or another task
+
+All tasks sorted by time
+========================================
+  [Mochi] Morning walk (07:00, high, pending)
+  [Whiskers] Vet checkup (07:00, high, pending)
+  [Mochi] Teeth brushing (07:10, medium, pending)
+  [Whiskers] Feeding (07:30, high, done)
+  [Mochi] Give meds (08:00, high, done)
+  [Mochi] Evening brush (no fixed time, low, pending)
+  [Whiskers] Grooming (no fixed time, low, pending)
+
+Incomplete tasks only
+========================================
+  [Mochi] Evening brush (no fixed time, low, pending)
+  [Mochi] Morning walk (07:00, high, pending)
+  [Mochi] Teeth brushing (07:10, medium, pending)
+  [Whiskers] Grooming (no fixed time, low, pending)
+  [Whiskers] Vet checkup (07:00, high, pending)
+
+Mochi's tasks, sorted by time
+========================================
+  [Mochi] Morning walk (07:00, high, pending)
+  [Mochi] Teeth brushing (07:10, medium, pending)
+  [Mochi] Give meds (08:00, high, done)
+  [Mochi] Evening brush (no fixed time, low, pending)
+```
