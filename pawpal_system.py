@@ -33,6 +33,7 @@ class CareTask:
     completed: bool = False
 
     def mark_complete(self) -> None:
+        """Mark this task as completed."""
         self.completed = True
 
 
@@ -44,6 +45,7 @@ class Pet:
     tasks: list[CareTask] = field(default_factory=list)
 
     def add_task(self, task: CareTask) -> None:
+        """Add a task to this pet, linking the task back to it."""
         task.pet = self
         self.tasks.append(task)
 
@@ -54,6 +56,7 @@ class Owner:
     pets: list[Pet] = field(default_factory=list)
 
     def get_all_tasks(self) -> list[CareTask]:
+        """Return every task across all of this owner's pets, in one flat list."""
         all_tasks = []
         for pet in self.pets:
             for task in pet.tasks:
@@ -85,6 +88,7 @@ class DailyPlan:
     skipped: list[tuple[CareTask, str]] = field(default_factory=list)
 
     def summary(self) -> str:
+        """Return a one-line overview of how many tasks were scheduled vs. skipped."""
         total_minutes = sum(st.task.duration_minutes for st in self.scheduled)
         return (
             f"{self.owner.name}'s plan for {self.plan_date.isoformat()}: "
@@ -93,6 +97,7 @@ class DailyPlan:
         )
 
     def explain(self) -> str:
+        """Return the full plan with each scheduled/skipped task and the reason behind it."""
         lines = [self.summary(), ""]
         if self.scheduled:
             lines.append("Scheduled:")
@@ -114,15 +119,18 @@ _PRIORITY_ORDER = {Priority.HIGH: 0, Priority.MEDIUM: 1, Priority.LOW: 2}
 
 
 def _time_to_minutes(t: time) -> int:
+    """Convert a time-of-day to minutes since midnight."""
     return t.hour * 60 + t.minute
 
 
 def _minutes_to_time(minutes: int) -> time:
+    """Convert minutes since midnight back to a time-of-day."""
     minutes %= 24 * 60
     return time(hour=minutes // 60, minute=minutes % 60)
 
 
 def _intervals_overlap(a_start: int, a_end: int, b_start: int, b_end: int) -> bool:
+    """Return whether two [start, end) minute ranges overlap."""
     return a_start < b_end and b_start < a_end
 
 
@@ -135,6 +143,7 @@ class Scheduler:
         constraints: PlanningConstraints,
         plan_date: Optional[date] = None,
     ) -> DailyPlan:
+        """Build a DailyPlan by placing fixed-time tasks, then filling gaps by priority."""
         plan = DailyPlan(plan_date=plan_date or date.today(), owner=owner)
 
         all_tasks = owner.get_all_tasks()
@@ -223,7 +232,9 @@ class Scheduler:
         return plan
 
     def _sort_tasks(self, tasks: list[CareTask]) -> list[CareTask]:
+        """Sort tasks by priority (high first), then by shortest duration."""
         return sorted(tasks, key=lambda t: (_PRIORITY_ORDER[t.priority], t.duration_minutes))
 
     def _fits(self, task: CareTask, remaining_minutes: int) -> bool:
+        """Return whether a task's duration fits within the remaining time."""
         return task.duration_minutes <= remaining_minutes
