@@ -61,12 +61,16 @@
 **a. What you tested**
 
 - What behaviors did you test?
+  - Tasks with no `fixed_time` sorting last; `mark_complete` not spawning a new occurrence for a task with no pet or an unsupported recurrence value (e.g. `"monthly"`, which silently does nothing since the check only matches `"daily"`/`"weekly"`); fixed tasks that fall outside the day window or overlap a blocked window or another fixed task; overlapping/unsorted blocked windows still producing correct gaps; and `detect_conflicts` correctly ignoring back-to-back tasks (`end_a == start_b`) while still flagging same-time and multi-way overlaps.
 - Why were these tests important?
+  - One test caught an actual bug: `mark_complete` had no guard against being called on an already-completed task, so completing a recurring task twice (e.g. a user double-clicking "complete") would spawn two next occurrences instead of one. I fixed it by returning early if `self.completed` is already `True`, and the new test pins that behavior down so it can't silently regress.
 
 **b. Confidence**
 
 - How confident are you that your scheduler works correctly?
+  - Fairly confident for the core paths (fixed-time placement, conflict detection, priority-based gap filling), since those are now covered by tests. I'm less confident about compounding edge cases in `build_plan`, like multiple overlapping blocked windows combined with several same-priority flexible tasks competing for leftover space in a gap.
 - What edge cases would you test next if you had more time?
+  - Boundary conditions on `day_start`/`day_end` (a task ending exactly at `day_end`, a zero-length day), a flexible task whose duration fits the sum of multiple gaps but not any single gap (should still be skipped, not split), and ensure the greedy gap-filling behavior allows a lower-priority shorter task to fill space a higher-priority task couldn't fit into within the same gap.
 
 ---
 

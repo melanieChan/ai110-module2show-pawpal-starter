@@ -87,7 +87,14 @@ pytest --cov
 Sample test output:
 
 ```
-# Paste your pytest output here
+=============================================== test session starts ===============================================
+platform darwin -- Python 3.14.7, pytest-9.1.1, pluggy-1.7.0
+plugins: anyio-4.15.1
+collected 16 items                                                                                                
+
+tests/test_pawpal.py ................                                                                       [100%]
+
+=============================================== 16 passed in 0.02s ================================================
 ```
 
 ## 📐 Smarter Scheduling
