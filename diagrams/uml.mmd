@@ -3,6 +3,8 @@ classDiagram
         +string name
         +List~Pet~ pets
         +get_all_tasks() List~CareTask~
+        +filter_tasks(completed, pet_name) List~CareTask~
+        +sort_tasks_by_time(tasks) List~CareTask~
     }
 
     class Pet {
@@ -41,6 +43,7 @@ classDiagram
         +bool completed
         +mark_complete() void
     }
+    note for CareTask "mark_complete() spawns the next\noccurrence on the same Pet when\nrecurrence is daily/weekly"
 
     class PlanningConstraints {
         +time day_start
@@ -49,10 +52,12 @@ classDiagram
     }
 
     class Scheduler {
-        +build_plan(owner, constraints) DailyPlan
+        +build_plan(owner, constraints, plan_date) DailyPlan
+        +detect_conflicts(owner) List~string~
         -_sort_tasks(tasks) List~CareTask~
         -_fits(task, remaining_minutes) bool
     }
+    note for Scheduler "Stateless: no instance attributes"
 
     class ScheduledTask {
         +CareTask task
@@ -81,3 +86,4 @@ classDiagram
     DailyPlan "1" --> "*" ScheduledTask
     DailyPlan --> Owner
     ScheduledTask --> CareTask
+    CareTask ..> CareTask : creates next occurrence
