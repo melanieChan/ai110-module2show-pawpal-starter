@@ -287,7 +287,8 @@ class Scheduler:
         )
         for i, task_a in enumerate(fixed_tasks):
             end_a = _time_to_minutes(task_a.fixed_time) + task_a.duration_minutes
-            for task_b in fixed_tasks[i + 1 :]:
+            for j in range(i + 1, len(fixed_tasks)):
+                task_b = fixed_tasks[j]
                 start_b = _time_to_minutes(task_b.fixed_time)
                 if start_b >= end_a:
                     break
