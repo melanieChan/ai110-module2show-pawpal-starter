@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import heapq
 from dataclasses import dataclass, field
 from datetime import date, time
 from enum import Enum
@@ -134,6 +135,16 @@ def _intervals_overlap(a_start: int, a_end: int, b_start: int, b_end: int) -> bo
     return a_start < b_end and b_start < a_end
 
 
+def _overlaps_any(start: int, end: int, sorted_intervals: list[tuple[int, int]]) -> bool:
+    """Check [start, end) against intervals sorted by start, stopping once intervals start past end."""
+    for b_start, b_end in sorted_intervals:
+        if b_start >= end:
+            break
+        if _intervals_overlap(start, end, b_start, b_end):
+            return True
+    return False
+
+
 class Scheduler:
     """Stateless scheduling service: builds a DailyPlan from an Owner's tasks and constraints."""
 
@@ -150,10 +161,10 @@ class Scheduler:
 
         day_start = _time_to_minutes(constraints.day_start)
         day_end = _time_to_minutes(constraints.day_end)
-        busy: list[tuple[int, int]] = [
+        blocked: list[tuple[int, int]] = sorted(
             (_time_to_minutes(start), _time_to_minutes(end))
             for start, end in constraints.blocked_windows
-        ]
+        )
 
         fixed_tasks = sorted(
             (t for t in all_tasks if t.fixed_time is not None),
@@ -164,13 +175,14 @@ class Scheduler:
         )
 
         # Place fixed-time tasks first; they must happen at a specific time or not at all.
+        confirmed_fixed: list[tuple[int, int]] = []
         for task in fixed_tasks:
             start = _time_to_minutes(task.fixed_time)
             end = start + task.duration_minutes
             if start < day_start or end > day_end:
                 plan.skipped.append((task, "fixed time falls outside the planning window"))
                 continue
-            if any(_intervals_overlap(start, end, b_start, b_end) for b_start, b_end in busy):
+            if _overlaps_any(start, end, blocked) or _overlaps_any(start, end, confirmed_fixed):
                 plan.skipped.append(
                     (task, "fixed time conflicts with a blocked window or another task")
                 )
@@ -186,10 +198,13 @@ class Scheduler:
                     ),
                 )
             )
-            busy.append((start, end))
+            confirmed_fixed.append((start, end))
+
+        # merge sorted lists
+        # confirmed_fixed is already sorted since fixed_tasks is sorted and we only ever append to it in that same order.
+        busy = list(heapq.merge(blocked, confirmed_fixed))
 
         # Compute the free gaps left in the day once blocked windows and fixed tasks are placed.
-        busy.sort()
         gaps: list[tuple[int, int]] = []
         cursor = day_start
         for b_start, b_end in busy:
