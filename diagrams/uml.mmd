@@ -2,13 +2,13 @@ classDiagram
     class Owner {
         +string name
         +List~Pet~ pets
+        +get_all_tasks() List~CareTask~
     }
 
     class Pet {
         +string name
         +string species
         +string notes
-        +Owner owner
         +List~CareTask~ tasks
     }
 
@@ -36,6 +36,7 @@ classDiagram
         +Priority priority
         +time fixed_time
         +string recurrence
+        +Pet pet
     }
 
     class PlanningConstraints {
@@ -45,7 +46,7 @@ classDiagram
     }
 
     class Scheduler {
-        +build_plan(pet, constraints) DailyPlan
+        +build_plan(owner, constraints) DailyPlan
         -_sort_tasks(tasks) List~CareTask~
         -_fits(task, remaining_minutes) bool
     }
@@ -58,8 +59,8 @@ classDiagram
     }
 
     class DailyPlan {
-        +date date
-        +Pet pet
+        +date plan_date
+        +Owner owner
         +List~ScheduledTask~ scheduled
         +List~tuple~ skipped
         +summary() string
@@ -68,9 +69,12 @@ classDiagram
 
     Owner "1" --> "*" Pet
     Pet "1" --> "*" CareTask
+    CareTask --> Pet : back-reference
     CareTask --> TaskCategory
     CareTask --> Priority
+    Scheduler ..> Owner : uses
     Scheduler ..> PlanningConstraints : uses
     Scheduler ..> DailyPlan : creates
     DailyPlan "1" --> "*" ScheduledTask
+    DailyPlan --> Owner
     ScheduledTask --> CareTask
