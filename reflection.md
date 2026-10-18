@@ -25,12 +25,16 @@
 **a. Constraints and priorities**
 
 - What constraints does your scheduler consider (for example: time, priority, preferences)?
+  - A start and end time for the day, blocked windows, priority tasks
 - How did you decide which constraints mattered most?
+  - I decided time constraints mattered most because the pet's care schedule will depend on owner's available time. 
 
 **b. Tradeoffs**
 
 - Describe one tradeoff your scheduler makes.
+  - It prioritizes tasks that have fixed times first before other tasks.
 - Why is that tradeoff reasonable for this scenario?
+  - That tradeoff was reasonable for this scenario because the other tasks can be filled in after the main important tasks have been.
 
 ---
 
@@ -39,12 +43,16 @@
 **a. How you used AI**
 
 - How did you use AI tools during this project (for example: design brainstorming, debugging, refactoring)?
+  - planning, refactoring, explaning
 - What kinds of prompts or questions were most helpful?
+  - I asked it to give a plan outline, reevaluate parts, and explain areas I was confused on. 
 
 **b. Judgment and verification**
 
 - Describe one moment where you did not accept an AI suggestion as-is.
+  - When optimizing the overlap check in the scheduler, Claude suggested using `bisect.insort` to keep the list of busy time intervals sorted so it could exit the overlap check early. It framed this as a performance improvement, but it didn't sit right with me, so I pushed back on the complexity claim.
 - How did you evaluate or verify what the AI suggested?
+  - I worked through the Big-O myself. `bisect.insort` finds the insertion point in O(log n), but inserting into a list still has to shift every element after it, which is O(n). Doing that for every fixed task meant the "optimization" was actually O(n) per call, not O(log n), and could end up worse than the original append-then-sort-once approach. Once Claude confirmed that analysis, I proposed keeping a separate list of confirmed fixed tasks (sorted for free, since we only append to it in fixed-time order) and merging it with the pre-sorted blocked windows using `heapq.merge`, which is O(n). We compared all three approaches before I had Claude implement the merge version. I confirmed the fix didn't change behavior by rerunning the existing tests and comparing `main.py`'s output before and after.
 
 ---
 
