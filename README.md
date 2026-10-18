@@ -22,6 +22,24 @@ Your final app should:
 - Display the plan clearly (and ideally explain the reasoning)
 - Include tests for the most important scheduling behaviors
 
+## 🧩 Implementation Summary
+
+The logic layer lives in `pawpal_system.py` as plain Python dataclasses, kept separate from the Streamlit UI so the scheduling logic can be tested on its own (see `tests/test_pawpal.py` and `main.py`).
+
+**Data model:**
+- `Owner` holds a list of `Pet`s and exposes `get_all_tasks()`, which flattens every pet's tasks into one list (and tags each task with a back-reference to its `Pet`).
+- `Pet` holds basic info (`name`, `species`, `notes`) and a list of `CareTask`s, added via `add_task()`.
+- `CareTask` represents one piece of care (walk, feeding, meds, enrichment, grooming), with a `duration_minutes`, a `priority` (`LOW`/`MEDIUM`/`HIGH`), an optional `fixed_time` for things that must happen at a specific hour (like meds), and `mark_complete()` to track status.
+- `PlanningConstraints` describes the planning window (`day_start`, `day_end`) and any `blocked_windows` (e.g. the owner is out at work).
+
+**Scheduling:**
+- `Scheduler.build_plan(owner, constraints)` is the entry point. It pulls every task across all of the owner's pets via `get_all_tasks()`, then:
+  1. Places `fixed_time` tasks first, skipping any that fall outside the day or collide with a blocked window or each other.
+  2. Computes the free time gaps left in the day.
+  3. Sorts the remaining flexible tasks by priority (then shortest duration first) and greedily fills each gap, so higher-priority tasks get scheduled before lower-priority ones run out of room.
+  4. Anything that doesn't fit anywhere ends up in `skipped`, with a reason.
+- The result is a `DailyPlan`, made up of `ScheduledTask`s (task + start/end time + a plain-language reason it was placed there) and `skipped` tasks. `DailyPlan.summary()` gives a one-line overview, and `explain()` prints the full breakdown per pet, which is what powers "Today's Schedule" in `main.py` and the planned Streamlit output.
+
 ## Getting started
 
 ### Setup
