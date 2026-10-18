@@ -65,6 +65,24 @@ class Owner:
                 all_tasks.append(task)
         return all_tasks
 
+    def filter_tasks(
+        self,
+        completed: Optional[bool] = None,
+        pet_name: Optional[str] = None,
+    ) -> list[CareTask]:
+        """Return all tasks across pets, optionally narrowed by completion status and/or pet name."""
+        tasks = self.get_all_tasks()
+        if completed is not None:
+            tasks = [t for t in tasks if t.completed == completed]
+        if pet_name is not None:
+            tasks = [t for t in tasks if t.pet is not None and t.pet.name == pet_name]
+        return tasks
+
+    def sort_tasks_by_time(self, tasks: Optional[list[CareTask]] = None) -> list[CareTask]:
+        """Sort tasks by fixed_time ascending; tasks with no fixed time sort last."""
+        tasks = self.get_all_tasks() if tasks is None else tasks
+        return sorted(tasks, key=lambda t: (t.fixed_time is None, t.fixed_time or time.min))
+
 
 @dataclass
 class PlanningConstraints:
